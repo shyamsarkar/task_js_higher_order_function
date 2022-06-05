@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Array Functions</title>
+    <link rel="stylesheet" href="./bootstrap.5.2.0.min.css">
+    <!-- <script src="./jquery-3.6.0.min.js"></script> -->
+    <link rel="stylesheet" href="./all.min.css">
+    <script src="./all.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 py-5">
+                <h1>Map-Filter-Reduce</h1>
+                <form id="myForm">
+                    <div class="py-3 d-flex">
+                        <div style="width:75%;">
+                            <input type="text" class="form-control" name="task" id="task" placeholder="Add New Task"
+                                autofocus>
+                        </div>
+                        <div style="margin-left: 10px;">
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                            <input type="hidden" name="id" id="id" value="">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-6">
+
+                <table class="table table-striped table-hover table-bordered border-primary">
+                    <thead>
+                        <tr>
+                            <th>SNo.</th>
+                            <th>complete</th>
+                            <th>Task</th>
+                            <th>DateTime</th>
+                            <th>Edit</th>
+                            <th>Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table_body">
+                    </tbody>
+                </table>
+
+            </div>
+
+        </div>
+    </div>
+
+
+    <script>
+        function current_date() {
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = today.getFullYear();
+            return dd + "-" + mm + '-' + yyyy;
+        }
+        function current_time() {
+            var today = new Date();
+            var hh = String(today.getHours());
+            var ii = String(today.getMinutes() + 1);
+            var ss = String(today.getSeconds());
+            return hh + ":" + ii + ':' + ss;
+        }
+        function clearInput() {
+            document.getElementById('task').value = "";
+            document.getElementById('id').value = "";
+        }
+        function saveRecord(new_task, id) {
+            removeItem(id);
+            let latest_arr = getLatest();
+            let task_app = JSON.parse(localStorage.getItem("task_app"));
+            if (!task_app)
+                task_app = [{ id: 0, task: "", sequence: 0, create_date: "", create_time: "" }]
+            let new_task_app = { id: latest_arr.id + 1, task: new_task, sequence: latest_arr.sequence + 1, create_date: current_date(), create_time: current_time() };
+            task_app.push(new_task_app);
+            localStorage.setItem("task_app", JSON.stringify(task_app));
+        }
+        function focusOnInput() {
+            document.getElementById('task').focus();
+        }
+
+        function removeItem(id) {
+            let allData = getAlldata();
+            element = allData.reduce((acc, curr) => {
+                if (curr.id == id)
+                    acc = curr;
+                return acc;
+            }, {});
+            let elementIndex = allData.indexOf(element);
+            if (elementIndex > -1) {
+                allData.splice(elementIndex, 1); // 2nd parameter means remove one item only
+            }
+            localStorage.setItem("task_app", JSON.stringify(allData));
+            show_record();
+        }
+
+        function editItem(id) {
+            let allData = getAlldata();
+            element = allData.reduce((acc, curr) => {
+                if (curr.id == id)
+                    acc = curr;
+                return acc;
+            }, {});
+            if (element != {}) {
+                document.getElementById('task').value = element.task;
+                document.getElementById('id').value = element.id;
+                document.getElementById('task').focus();
+            }
+        }
+
+    </script>
+
+    <script>
+
+        function getAlldata() {
+            let allData = localStorage.getItem("task_app");
+            let allDataJson = JSON.parse(allData);
+            return allDataJson;
+        }
+
+        function getLatest() {
+            let allDataJson = getAlldata();
+
+            let default_obj = { id: 0, task: "", sequence: 0, create_date: "", create_time: "" }
+
+            if (allDataJson) {
+                let latest_arr = Array.from(allDataJson).reduce((acc, curr) => {
+                    if (curr.sequence > acc.sequence)
+                        acc = curr;
+                    return acc;
+                }, default_obj);
+                return latest_arr;
+            }
+            else {
+                return default_obj;
+            }
+        }
+        function complete_task(id) {
+            let allData = getAlldata();
+            let checked_input = document.getElementsByName('complete[]');
+            console.log(checked_input);
+        }
+    </script>
+
+
+
+    <script>
+        function show_record() {
+
+            var table_body = document.getElementById('table_body');
+            table_body.innerHTML = "";
+            let data = getAlldata();
+            // data.reverse();  // just reverse the array ---works well
+            data.sort(function (element2, element1) {
+                return element1.id - element2.id;
+            });
+
+            data.map((element, index) => {
+                table_body.innerHTML += `<tr>
+                                            <td>${index + 1}.</td>
+                                            <td><input type="checkbox" name="complete[]" value="${element.id}" onchange="complete_task(${element.id})" ></td>
+                                            <td>${element.task}</td>
+                                            <td>${element.create_date} ${element.create_time}</td>
+                                            <td><i class="far fa-pen-to-square" onclick="editItem(${element.id})"></i></td>
+                                            <td><i class="fas fa-trash-can" onclick="removeItem(${element.id})"></i></td>
+                                        </tr>`;
+            });
+
+        }
+
+    </script>
+    <script>
+        // 1. Show record
+        window.onload = () => {
+            show_record();
+            document.getElementById('task').focus();
+        }
+
+
+        // 2. Insert Record
+        document.getElementById('myForm').addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            let new_task = document.getElementById("task").value.trim();
+            if (new_task != "") {
+                let id = document.getElementById('id').value;
+                saveRecord(new_task, id);
+
+                clearInput()
+            } else {
+                focusOnInput();
+            }
+            show_record();
+        });
+    </script>
+</body>
+
+</html>
