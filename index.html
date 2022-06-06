@@ -72,6 +72,14 @@
             document.getElementById('task').value = "";
             document.getElementById('id').value = "";
         }
+
+        function defaultObj() {
+            let task_app = JSON.parse(localStorage.getItem("task_app"));
+            if (!task_app)
+                task_app = [{ id: 0, task: "", sequence: 0, create_date: "", create_time: "" }]
+            localStorage.setItem("task_app", JSON.stringify(task_app));
+        }
+
         function saveRecord(new_task, id) {
             removeItem(id);
             let latest_arr = getLatest();
@@ -121,6 +129,8 @@
 
         function getAlldata() {
             let allData = localStorage.getItem("task_app");
+            if (!allData)
+                allData = JSON.stringify({ id: 0, task: "", sequence: 0, create_date: "", create_time: "" })
             let allDataJson = JSON.parse(allData);
             return allDataJson;
         }
@@ -153,7 +163,7 @@
 
     <script>
         function show_record() {
-
+            defaultObj();
             var table_body = document.getElementById('table_body');
             table_body.innerHTML = "";
             let data = getAlldata();
